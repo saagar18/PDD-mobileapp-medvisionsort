@@ -51,7 +51,7 @@ import java.io.ByteArrayOutputStream
 @Composable
 fun UploadScreen(
     uploadState: UiState<MedicalImage>,
-    onUpload: (fileBytes: ByteArray, filename: String) -> Unit,
+    onUpload: (fileBytes: ByteArray, filename: String, patientName: String, patientId: String) -> Unit,
     onResetUpload: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -61,6 +61,11 @@ fun UploadScreen(
     
     // Track if a demo preset is selected
     var selectedPresetName by remember { mutableStateOf<String?>(null) }
+    
+    // Patient Form State
+    var patientName by remember { mutableStateOf("") }
+    var patientId by remember { mutableStateOf("") }
+    var validationError by remember { mutableStateOf<String?>(null) }
 
     // Launcher for picking image from gallery
     val galleryLauncher = rememberLauncherForActivityResult(
@@ -114,6 +119,57 @@ fun UploadScreen(
                 fontSize = 13.sp,
                 color = TextSecondary
             )
+        }
+
+        if (uploadState !is UiState.Success) {
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 16.dp),
+                colors = CardDefaults.cardColors(containerColor = SlateDark.copy(alpha = 0.6f)),
+                shape = RoundedCornerShape(16.dp),
+                border = BorderStroke(1.dp, BorderGlass)
+            ) {
+                Column(
+                    modifier = Modifier.padding(16.dp)
+                ) {
+                    Text(
+                        text = "Patient Demographics",
+                        fontWeight = FontWeight.Bold,
+                        color = TextPrimary,
+                        fontSize = 16.sp,
+                        modifier = Modifier.padding(bottom = 12.dp)
+                    )
+                    OutlinedTextField(
+                        value = patientName,
+                        onValueChange = { patientName = it; validationError = null },
+                        label = { Text("Patient Name") },
+                        modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
+                        singleLine = true,
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = PrimaryTeal,
+                            unfocusedBorderColor = BorderGlass,
+                            focusedLabelColor = PrimaryTeal,
+                            focusedTextColor = TextPrimary,
+                            unfocusedTextColor = TextPrimary
+                        )
+                    )
+                    OutlinedTextField(
+                        value = patientId,
+                        onValueChange = { patientId = it; validationError = null },
+                        label = { Text("Patient ID") },
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true,
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = PrimaryTeal,
+                            unfocusedBorderColor = BorderGlass,
+                            focusedLabelColor = PrimaryTeal,
+                            focusedTextColor = TextPrimary,
+                            unfocusedTextColor = TextPrimary
+                        )
+                    )
+                }
+            }
         }
 
         // Selection / Action Cards
@@ -435,12 +491,26 @@ fun UploadScreen(
                             )
                         }
                     } else {
+
+                        if (validationError != null) {
+                            Text(
+                                text = validationError!!,
+                                color = UnclassifiedRed,
+                                fontSize = 13.sp,
+                                textAlign = TextAlign.Center,
+                                modifier = Modifier.padding(bottom = 8.dp).fillMaxWidth()
+                            )
+                        }
+
                         Row(modifier = Modifier.fillMaxWidth()) {
                             OutlinedButton(
                                 onClick = {
                                     selectedImageUri = null
                                     capturedBitmap = null
                                     selectedPresetName = null
+                                    patientName = ""
+                                    patientId = ""
+                                    validationError = null
                                     onResetUpload()
                                 },
                                 modifier = Modifier
@@ -456,6 +526,10 @@ fun UploadScreen(
                             GradientButton(
                                 text = "Analyze & Classify",
                                 onClick = {
+                                    if (patientName.isBlank() || patientId.isBlank()) {
+                                        validationError = "Please enter both Patient Name and Patient ID."
+                                        return@GradientButton
+                                    }
                                     try {
                                         val bytes: ByteArray
                                         val filename: String
@@ -473,7 +547,7 @@ fun UploadScreen(
                                             bytes = dummyPngBytes
                                             filename = selectedPresetName ?: "demo_scan.png"
                                         }
-                                        onUpload(bytes, filename)
+                                        onUpload(bytes, filename, patientName, patientId)
                                     } catch (e: Exception) {
                                         // Error handling done by UI state
                                     }

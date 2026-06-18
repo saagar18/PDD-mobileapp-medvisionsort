@@ -32,3 +32,32 @@ data class MedicalImage(
     val originalFilename: String,
     val storagePath: String
 )
+
+@Serializable
+data class LoginRequest(
+    val email: String,
+    val password: String
+)
+
+@Serializable
+data class RegisterRequest(
+    val name: String,
+    val email: String,
+    val password: String
+)
+
+@Serializable
+data class UserSessionData(
+    val name: String,
+    val email: String,
+    val role: String,
+    val department: String,
+    val hospital: String
+)
+
+@Serializable
+data class AuthResponse(
+    val success: Boolean,
+    val message: String? = null,
+    val user: UserSessionData? = null
+)

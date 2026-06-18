@@ -147,7 +147,9 @@ fun MainScreen(
                         NavigationTab.UPLOAD -> {
                             UploadScreen(
                                 uploadState = uploadState,
-                                onUpload = { bytes, name -> viewModel.uploadScan(bytes, name) },
+                                onUpload = { bytes, filename, patientName, patientId ->
+                                    viewModel.uploadScan(bytes, filename, patientName, patientId)
+                                },
                                 onResetUpload = { viewModel.resetUploadState() }
                             )
                         }

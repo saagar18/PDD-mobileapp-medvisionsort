@@ -4,8 +4,10 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.medvisionsort.data.DataRepository
 import com.example.medvisionsort.data.api.ApiClient
+import com.example.medvisionsort.data.model.LoginRequest
 import com.example.medvisionsort.data.model.MedicalImage
 import com.example.medvisionsort.data.model.MedicalStats
+import com.example.medvisionsort.data.model.RegisterRequest
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -78,25 +80,22 @@ class MainScreenViewModel(private val repository: DataRepository) : ViewModel() 
             _authError.value = "Email and password cannot be blank."
             return
         }
-        if (email.trim().lowercase() != "saagar@gmail.com") {
-            _authError.value = "Access restricted to saagar@gmail.com"
-            return
-        }
-        if (password != "admin123") {
-            _authError.value = "Incorrect password."
-            return
-        }
-        if (password.length < 6) {
-            _authError.value = "Password must be at least 6 characters."
-            return
-        }
-        // Mock authentication matching professional Doctor name
-        val username = email.substringBefore("@").replaceFirstChar { if (it.isLowerCase()) it.titlecase() else it.toString() }
-        val displayName = if (username.lowercase().startsWith("dr")) username else "Dr. $username"
         
-        _currentUser.value = UserSession(name = displayName, email = email)
-        _authState.value = AuthState.AUTHENTICATED
-        refreshAll()
+        viewModelScope.launch {
+            try {
+                val response = repository.login(LoginRequest(email.trim(), password))
+                if (response.success && response.user != null) {
+                    val u = response.user
+                    _currentUser.value = UserSession(name = u.name, email = u.email, role = u.role, department = u.department, hospital = u.hospital)
+                    _authState.value = AuthState.AUTHENTICATED
+                    refreshAll()
+                } else {
+                    _authError.value = response.message ?: "Login failed"
+                }
+            } catch (e: Exception) {
+                _authError.value = "Network Error: ${e.localizedMessage}"
+            }
+        }
     }
 
     fun register(name: String, email: String, password: String) {
@@ -105,23 +104,22 @@ class MainScreenViewModel(private val repository: DataRepository) : ViewModel() 
             _authError.value = "All fields are required."
             return
         }
-        if (email.trim().lowercase() != "saagar@gmail.com") {
-            _authError.value = "Access restricted to saagar@gmail.com"
-            return
+        
+        viewModelScope.launch {
+            try {
+                val response = repository.register(RegisterRequest(name.trim(), email.trim(), password))
+                if (response.success && response.user != null) {
+                    val u = response.user
+                    _currentUser.value = UserSession(name = u.name, email = u.email, role = u.role, department = u.department, hospital = u.hospital)
+                    _authState.value = AuthState.AUTHENTICATED
+                    refreshAll()
+                } else {
+                    _authError.value = response.message ?: "Registration failed"
+                }
+            } catch (e: Exception) {
+                _authError.value = "Network Error: ${e.localizedMessage}"
+            }
         }
-        if (password != "admin123") {
-            _authError.value = "Incorrect password."
-            return
-        }
-        if (password.length < 6) {
-            _authError.value = "Password must be at least 6 characters."
-            return
-        }
-        // Setup new session
-        val displayName = if (name.lowercase().startsWith("dr")) name else "Dr. $name"
-        _currentUser.value = UserSession(name = displayName, email = email)
-        _authState.value = AuthState.AUTHENTICATED
-        refreshAll()
     }
 
     fun logout() {
@@ -181,11 +179,11 @@ class MainScreenViewModel(private val repository: DataRepository) : ViewModel() 
         _uploadState.value = UiState.Idle
     }
 
-    fun uploadScan(fileBytes: ByteArray, filename: String) {
+    fun uploadScan(fileBytes: ByteArray, filename: String, patientName: String, patientId: String) {
         viewModelScope.launch {
             _uploadState.value = UiState.Loading
             try {
-                val result = repository.classifyImage(fileBytes, filename)
+                val result = repository.classifyImage(fileBytes, filename, patientName, patientId)
                 _uploadState.value = UiState.Success(result)
                 refreshAll()
             } catch (e: Exception) {

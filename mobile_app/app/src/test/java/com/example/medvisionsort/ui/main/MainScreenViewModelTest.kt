@@ -1,9 +1,12 @@
 package com.example.medvisionsort.ui.main
 
 import com.example.medvisionsort.data.DataRepository
+import com.example.medvisionsort.data.model.AuthResponse
+import com.example.medvisionsort.data.model.LoginRequest
 import com.example.medvisionsort.data.model.MedicalImage
 import com.example.medvisionsort.data.model.MedicalStats
 import com.example.medvisionsort.data.model.ModalityCounts
+import com.example.medvisionsort.data.model.RegisterRequest
 import junit.framework.TestCase.assertEquals
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
@@ -28,6 +31,14 @@ class MainScreenViewModelTest {
 private class FakeMyModelRepository : DataRepository {
   override val data: Flow<List<String>> = flow { emit(listOf("Sample")) }
 
+  override suspend fun login(request: LoginRequest): AuthResponse {
+    return AuthResponse(true, "Logged in", null)
+  }
+
+  override suspend fun register(request: RegisterRequest): AuthResponse {
+    return AuthResponse(true, "Registered", null)
+  }
+
   override fun getStatsFlow(): Flow<MedicalStats> = flow {
     emit(MedicalStats(0, 0.0, 0.0, 0, ModalityCounts(0, 0, 0, 0)))
   }
@@ -36,7 +47,7 @@ private class FakeMyModelRepository : DataRepository {
     emit(emptyList())
   }
 
-  override suspend fun classifyImage(fileBytes: ByteArray, filename: String): MedicalImage {
+  override suspend fun classifyImage(fileBytes: ByteArray, filename: String, patientName: String, patientId: String): MedicalImage {
     return MedicalImage("", "", "", 0.0, "", "", "", "", "", "")
   }
 }
