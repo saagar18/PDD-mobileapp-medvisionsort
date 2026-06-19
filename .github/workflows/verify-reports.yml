@@ -8,8 +8,10 @@ on:
   workflow_dispatch:
 
 jobs:
-  verify:
-    name: Verify Test & Security Reports
+
+  # ── Job 1: E2E Appium Test Report ─────────────────────────────────────────
+  verify-e2e:
+    name: 🧪 E2E Test Report
     runs-on: ubuntu-latest
 
     steps:
@@ -26,41 +28,94 @@ jobs:
           python -m pip install --upgrade pip
           pip install openpyxl
 
-      - name: Publish Test Results to Job Summary
-        run: |
-          python tests/publish_results.py
+      - name: Publish E2E Report to Job Summary
+        run: python tests/publish_results.py --report=e2e
 
-      - name: Upload E2E Test Report
-        id: upload-e2e
+      - name: Upload E2E Test Report Artifact
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: E2E-Test-Report-MedVisionSort-Appium
           path: mobile_app/E2E_Test_Report_MedVisionSort_Appium.xlsx
 
-      - name: Upload Security Vulnerabilities Report
-        id: upload-security
+  # ── Job 2: Security Vulnerability Report ──────────────────────────────────
+  verify-security:
+    name: 🛡️ Security Vulnerability Report
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: Install Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install openpyxl
+
+      - name: Publish Security Report to Job Summary
+        run: python tests/publish_results.py --report=security
+
+      - name: Upload Security Vulnerability Report Artifact
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: Security-Vulnerability-Report-v5-Mobileapp
           path: mobile_app/Security_Vulnerability_Report_v5_Mobileapp.xlsx
 
-      - name: Append Artifact Links to Job Summary
-        if: always()
+  # ── Job 3: Load Test Report ────────────────────────────────────────────────
+  verify-load-test:
+    name: ⚡ Load Test Report
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: Install Dependencies
         run: |
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "---" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "## 📎 Report Artifacts" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "The full Excel report files have been uploaded as workflow artifacts." >> $GITHUB_STEP_SUMMARY
-          echo "You can download them from the **Artifacts** panel at the top of this workflow run summary page." >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "| # | Artifact Name | File |" >> $GITHUB_STEP_SUMMARY
-          echo "| :---: | :--- | :--- |" >> $GITHUB_STEP_SUMMARY
-          echo "| 1 | \`E2E-Test-Report-MedVisionSort-Appium\` | \`E2E_Test_Report_MedVisionSort_Appium.xlsx\` |" >> $GITHUB_STEP_SUMMARY
-          echo "| 2 | \`Security-Vulnerability-Report-v5-Mobileapp\` | \`Security_Vulnerability_Report_v5_Mobileapp.xlsx\` |" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "> [!TIP]" >> $GITHUB_STEP_SUMMARY
-          echo "> Click the artifact name in the **Artifacts** section at the top of the summary page to download the \`.zip\` containing the full \`.xlsx\` report." >> $GITHUB_STEP_SUMMARY
+          python -m pip install --upgrade pip
+          pip install openpyxl
+
+      - name: Publish Load Test Report to Job Summary
+        run: python tests/publish_results.py --report=load
+
+      - name: Upload Load Test Report Artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: Load-Test-Report-MedVisionSort
+          path: mobile_app/Load_Test_Report_MedVisionSort.xlsx
+
+  # ── Job 4: Artifact Links Summary (runs after all 3 jobs) ─────────────────
+  publish-artifact-links:
+    name: 📎 Artifact Links Summary
+    runs-on: ubuntu-latest
+    needs: [verify-e2e, verify-security, verify-load-test]
+    if: always()
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: Install Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install openpyxl
+
+      - name: Append Artifact Links to Job Summary
+        run: python tests/publish_results.py --report=artifacts
