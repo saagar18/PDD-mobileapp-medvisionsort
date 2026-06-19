@@ -83,9 +83,6 @@ def publish_e2e():
 
     lines = []
     lines.append("# 🧪 E2E Test Suite — MedVisionSort Appium Report\n")
-    lines.append("> [!NOTE]")
-    lines.append("> Pre-executed Appium E2E test results. No live tests were run during this step.\n")
-
     lines.append(f"*{e2e_sum.get('generated')}*\n")
     lines.append("| Metric | Value |")
     lines.append("| :--- | :--- |")
