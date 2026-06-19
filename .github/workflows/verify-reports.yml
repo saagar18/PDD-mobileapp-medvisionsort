@@ -31,13 +31,36 @@ jobs:
           python tests/publish_results.py
 
       - name: Upload E2E Test Report
+        id: upload-e2e
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: E2E-Test-Report-MedVisionSort-Appium
           path: mobile_app/E2E_Test_Report_MedVisionSort_Appium.xlsx
 
       - name: Upload Security Vulnerabilities Report
+        id: upload-security
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: Security-Vulnerability-Report-v5-Mobileapp
           path: mobile_app/Security_Vulnerability_Report_v5_Mobileapp.xlsx
+
+      - name: Append Artifact Links to Job Summary
+        if: always()
+        run: |
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "---" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## 📎 Report Artifacts" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "The full Excel report files have been uploaded as workflow artifacts." >> $GITHUB_STEP_SUMMARY
+          echo "You can download them from the **Artifacts** panel at the top of this workflow run summary page." >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| # | Artifact Name | File |" >> $GITHUB_STEP_SUMMARY
+          echo "| :---: | :--- | :--- |" >> $GITHUB_STEP_SUMMARY
+          echo "| 1 | \`E2E-Test-Report-MedVisionSort-Appium\` | \`E2E_Test_Report_MedVisionSort_Appium.xlsx\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| 2 | \`Security-Vulnerability-Report-v5-Mobileapp\` | \`Security_Vulnerability_Report_v5_Mobileapp.xlsx\` |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "> [!TIP]" >> $GITHUB_STEP_SUMMARY
+          echo "> Click the artifact name in the **Artifacts** section at the top of the summary page to download the \`.zip\` containing the full \`.xlsx\` report." >> $GITHUB_STEP_SUMMARY
